@@ -1,0 +1,4 @@
+# Define project specific obfuscation rules here.
+# You can include the obfuscation configuration files in the current module.
+#
+# Add rules that are only applicable to this project.

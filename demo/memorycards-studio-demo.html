@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆卡片制作台 · Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --sidebar: #2E5C4D;
+    --sidebar-active: #3E7A66;
+    --bg: #F7F4EC;
+    --primary: #3FA372;
+    --sub: #8A8A8A;
+    --input-bg: #F5F0E4;
+    --front: #3D7A63;
+    --back: #FFF3B8;
+    --back-text: #5A4A1E;
+    --tag-bg: #E3F2E8;
+    --tag-fg: #2E7D5B;
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "HarmonyOS Sans", sans-serif;
+    background: var(--bg); color: #333; display: flex;
+  }
+
+  /* ===================== 侧边栏 ===================== */
+  .sidebar {
+    width: 216px; background: var(--sidebar); height: 100vh; flex-shrink: 0;
+    padding: 20px 12px 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .brand { display: flex; gap: 10px; align-items: center; padding: 8px 6px 14px; }
+  .brand .logo { font-size: 24px; }
+  .brand .t1 { color: #fff; font-size: 16px; font-weight: 700; }
+  .brand .t2 { color: #9DBFB3; font-size: 10px; margin-top: 2px; }
+  .nav-item {
+    display: flex; gap: 10px; align-items: center; padding: 11px 12px;
+    border-radius: 12px; cursor: pointer; background: rgba(255,255,255,.04);
+    border: none; width: 100%; text-align: left; transition: background .15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.09); }
+  .nav-item.active { background: var(--sidebar-active); }
+  .nav-item .ico { font-size: 19px; line-height: 1; }
+  .nav-item .nt { color: #fff; font-size: 15px; }
+  .nav-item.active .nt { font-weight: 700; }
+  .nav-item .nd { color: #9DBFB3; font-size: 10px; margin-top: 2px; }
+  .stats {
+    margin-top: auto; background: rgba(255,255,255,.08); border-radius: 12px;
+    padding: 12px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .stats .cap { font-size: 11px; color: #9DBFB3; }
+  .stat-line { display: flex; justify-content: space-between; font-size: 12px; }
+  .stat-line .k { color: #CDE3DA; }
+  .stat-line .v { color: #fff; font-weight: 700; }
+
+  /* ===================== 内容区 ===================== */
+  .content { flex: 1; height: 100vh; overflow-y: auto; }
+  .page { display: none; max-width: 1120px; margin: 0 auto; padding: 28px 22px; }
+  .page.active { display: block; }
+  .page.narrow { max-width: 720px; }
+  .page-header { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; }
+  .page-header .pico { font-size: 24px; }
+  .page-header h1 { font-size: 22px; }
+  .page-header .pdesc { font-size: 13px; color: var(--sub); margin-top: 3px; }
+  .badge {
+    margin-left: auto; font-size: 12px; color: var(--tag-fg); background: var(--tag-bg);
+    padding: 5px 12px; border-radius: 14px; white-space: nowrap;
+  }
+
+  /* 通用卡片 / 胶囊 */
+  .panel { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 3px 10px rgba(63,163,114,.06); }
+  .chip {
+    display: inline-block; font-size: 11px; color: var(--tag-fg); background: var(--tag-bg);
+    padding: 3px 8px; border-radius: 10px; line-height: 1.5;
+  }
+  .chip.click { cursor: pointer; font-size: 12px; padding: 5px 12px; border-radius: 14px; transition: all .15s; user-select: none; }
+  .chip.click:hover { filter: brightness(.96); }
+  .chip.click.on { background: var(--primary); color: #fff; }
+  .badge-amber { background: #FFF2D9; color: #C77700; }
+  .m-badge {
+    display: inline-block; font-size: 11px; color: #666; background: #F2EEE3;
+    padding: 3px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; border-radius: 21px; transition: transform .12s, filter .12s; }
+  button:active { transform: scale(.97); }
+
+  /* ===================== 录入台 ===================== */
+  .studio { display: flex; gap: 16px; align-items: flex-start; }
+  .col { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .fmt-card .ft { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .fmt-code {
+    display: inline-block; font-family: Consolas, monospace; font-size: 13px;
+    color: var(--tag-fg); background: var(--tag-bg); padding: 5px 10px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .fmt-rules { font-size: 11px; color: var(--sub); line-height: 17px; white-space: pre-line; }
+  textarea.batch {
+    height: 300px; width: 100%; border: 1px solid #EFE8D8; outline: none; background: #fff;
+    border-radius: 14px; padding: 14px; font-size: 14px; line-height: 1.7; color: #333; resize: vertical;
+    font-family: inherit;
+  }
+  textarea.batch:focus { border-color: var(--primary); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-primary {
+    flex: 2; height: 44px; background: var(--primary); color: #fff; font-size: 15px; font-weight: 500;
+  }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-ghost {
+    flex: 1; height: 44px; background: #fff; color: var(--primary); font-size: 14px;
+    border: 1.5px solid var(--primary);
+  }
+  .btn-plain { flex: 1; height: 44px; background: #fff; color: var(--sub); font-size: 14px; border: 1.5px solid #DDD; }
+  .preview-head { display: flex; gap: 8px; align-items: center; }
+  .preview-head .pt { font-size: 15px; font-weight: 700; }
+  .preview-list { display: flex; flex-direction: column; gap: 10px; }
+  .p-card { background: #fff; border: 1px solid #EFE8D8; border-radius: 14px; padding: 13px; }
+  .p-card .pr { display: flex; justify-content: space-between; font-size: 10px; color: #B0A78F; margin-bottom: 6px; }
+  .p-card .pr .ok { color: var(--tag-fg); }
+  .p-card .pq { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  .p-card .pa { font-size: 13px; color: var(--sub); margin-bottom: 7px; }
+  .p-card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .preview-empty { text-align: center; padding: 70px 0; }
+  .preview-empty .big { font-size: 44px; }
+  .preview-empty .txt { font-size: 13px; color: var(--sub); margin-top: 8px; line-height: 20px; }
+
+  /* ===================== 卡片库 ===================== */
+  .search-bar {
+    display: flex; gap: 8px; align-items: center; background: #fff; border: 1px solid #EFE8D8;
+    border-radius: 12px; padding: 0 10px;
+  }
+  .search-bar input {
+    flex: 1; height: 42px; border: none; outline: none; background: none; font-size: 14px; font-family: inherit;
+  }
+  .tag-filter-row { display: flex; gap: 8px; align-items: center; }
+  .tag-filter-row .tf-cap { font-size: 12px; color: var(--sub); }
+  .tag-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .tag-scroll::-webkit-scrollbar { height: 4px; }
+  .tag-scroll::-webkit-scrollbar-thumb { background: #D8D0BE; border-radius: 2px; }
+  .lib-list { display: flex; flex-direction: column; gap: 12px; }
+  .lib-item { background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 3px 10px rgba(63,163,114,.08); }
+  .lib-item .row1 { display: flex; gap: 10px; align-items: flex-start; }
+  .lib-item .q { flex: 1; font-size: 16px; font-weight: 700; }
+  .lib-item .del { background: none; color: #B9B9B9; font-size: 15px; padding: 0 4px 0 8px; line-height: 1.2; }
+  .lib-item .del:hover { color: #E05555; }
+  .lib-item .a { font-size: 13px; color: var(--sub); margin-top: 8px; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lib-item .row3 { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .lib-item .tags { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .lib-item .edit-btn {
+    font-size: 12px; color: var(--primary); background: none; border: 1px solid var(--primary);
+    padding: 4px 8px; border-radius: 10px;
+  }
+  .edit-box { border: 1.5px solid var(--primary); }
+  .edit-box .eb-cap { font-size: 13px; font-weight: 700; color: var(--tag-fg); margin-bottom: 10px; }
+  .edit-box input, .edit-box textarea {
+    width: 100%; border: none; outline: none; background: var(--input-bg); border-radius: 10px;
+    padding: 10px 12px; font-size: 13px; font-family: inherit; color: #333;
+  }
+  .edit-box textarea { height: 90px; resize: vertical; line-height: 1.6; }
+  .edit-box .sep { height: 10px; }
+  .edit-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .edit-actions .cancel { flex: 1; height: 38px; background: var(--input-bg); color: var(--sub); font-size: 13px; }
+  .edit-actions .save { flex: 2; height: 38px; background: var(--primary); color: #fff; font-size: 13px; }
+  .empty-state { text-align: center; padding: 56px 0; }
+  .empty-state .big { font-size: 48px; }
+  .empty-state .t1 { font-size: 15px; color: #666; margin-top: 8px; }
+  .empty-state .t2 { font-size: 12px; color: var(--sub); margin-top: 4px; }
+  .empty-state button {
+    margin-top: 14px; height: 40px; padding: 0 24px; background: var(--primary); color: #fff; font-size: 15px;
+  }
+
+  /* ===================== 复习 ===================== */
+  .review-tools { display: flex; gap: 8px; align-items: center; }
+  .review-tools .shuffle { margin-left: auto; font-size: 12px; color: var(--primary); background: var(--tag-bg); }
+  .review-tools .shuffle.on { background: var(--primary); color: #fff; }
+  .progress-pill {
+    align-self: center; font-size: 13px; color: #6B5B3E; background: #F0EAD9;
+    padding: 6px 14px; border-radius: 14px;
+  }
+  .flip-scene { perspective: 900px; }
+  .flip-card {
+    position: relative; height: 320px; cursor: pointer; transform-style: preserve-3d;
+    transition: transform .44s cubic-bezier(.45,.05,.35,1);
+  }
+  .flip-card.flipped { transform: rotateY(180deg); }
+  .flip-face {
+    position: absolute; inset: 0; border-radius: 22px; backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center; padding: 0 24px; gap: 14px;
+  }
+  .face-front { background: var(--front); box-shadow: 0 6px 16px rgba(61,122,99,.25); }
+  .face-back { background: var(--back); box-shadow: 0 6px 16px rgba(194,169,63,.25); transform: rotateY(180deg); }
+  .face-tag { font-size: 14px; }
+  .face-front .face-tag { color: #CDE8DC; }
+  .face-back .face-tag { color: #B08900; }
+  .face-main { font-size: 21px; font-weight: 700; line-height: 1.6; word-break: break-word; }
+  .face-front .face-main { color: #fff; }
+  .face-back .face-main { color: var(--back-text); font-size: 16px; font-weight: 500; }
+  .face-front .ftags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .face-front .ftags span {
+    font-size: 11px; color: #D8F3E7; background: rgba(255,255,255,.14); padding: 3px 8px; border-radius: 10px;
+  }
+  .face-hint { font-size: 12px; }
+  .face-front .face-hint { color: #9DBFB0; }
+  .face-back .face-hint { color: #C4A93F; }
+  .mark-cap { text-align: center; font-size: 12px; color: var(--sub); }
+  .mark-row, .nav-row { display: flex; gap: 12px; margin-top: 0; }
+  .mark-row button, .nav-row button { flex: 1; height: 42px; font-size: 14px; }
+  .mark-0 { background: #fff; color: #C77700; border: 1.5px solid #E8B04B; }
+  .mark-1 { background: #fff; color: #4A7EBB; border: 1.5px solid #7FA8D9; }
+  .mark-2 { background: var(--primary); color: #fff; }
+  .nav-prev { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+  .nav-next { background: var(--primary); color: #fff; }
+  .nav-row { margin-top: 16px; }
+
+  /* Toast */
+  #toast {
+    position: fixed; left: 50%; top: 26px; transform: translateX(-50%) translateY(-16px);
+    background: rgba(46,92,77,.94); color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s; white-space: nowrap; z-index: 99;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+  <!-- ============ 左侧导航栏 ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">📚</span>
+      <div>
+        <div class="t1">记忆卡片制作台</div>
+        <div class="t2">Memory Card Studio</div>
+      </div>
+    </div>
+    <button class="nav-item active" data-nav="0"><span class="ico">📝</span><div><div class="nt">录入台</div><div class="nd">批量导入 · 实时预览</div></div></button>
+    <button class="nav-item" data-nav="1"><span class="ico">🗂</span><div><div class="nt">卡片库</div><div class="nd">搜索 · 筛选 · 编辑</div></div></button>
+    <button class="nav-item" data-nav="2"><span class="ico">🔄</span><div><div class="nt">复习</div><div class="nd">翻卡 · 洗牌 · 掌握度</div></div></button>
+    <div class="stats">
+      <div class="cap">📊 学习概览</div>
+      <div class="stat-line"><span class="k">卡片总数</span><span class="v" id="st-total">0 张</span></div>
+      <div class="stat-line"><span class="k">标签数</span><span class="v" id="st-tags">0 个</span></div>
+      <div class="stat-line"><span class="k">已掌握</span><span class="v" id="st-done">0 张</span></div>
+    </div>
+  </aside>
+
+  <!-- ============ 内容区 ============ -->
+  <main class="content">
+
+    <!-- 录入台 -->
+    <section class="page active" id="page-0">
+      <div class="page-header">
+        <span class="pico">📝</span>
+        <div><h1>录入台</h1><div class="pdesc">左侧批量输入，右侧实时预览，一键导入查重去重</div></div>
+        <span class="badge" id="studio-badge"></span>
+      </div>
+      <div class="studio">
+        <div class="col">
+          <div class="panel fmt-card">
+            <div class="ft">录入格式</div>
+            <div class="fmt-code">题干 | 答案 #标签1 #标签2</div>
+            <div class="fmt-rules">· 每行一张卡片，支持全角｜分隔
+· # 后为标签，可写多个，也可不写
+· 缺少题干或答案的行会被自动跳过</div>
+          </div>
+          <textarea class="batch" id="batch-input" placeholder="在此粘贴 / 输入卡片文本，右侧将实时预览…"></textarea>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="importDraft()">🚀 一键导入</button>
+            <button class="btn-ghost" onclick="fillSample()">🧪 示例</button>
+            <button class="btn-plain" onclick="clearInput()">🧹 清空</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="preview-head">
+            <span class="pt">实时预览</span>
+            <span class="chip" id="draft-count">0 张</span>
+            <span style="flex:1"></span>
+            <span class="chip badge-amber" id="draft-skip" style="display:none"></span>
+          </div>
+          <div id="preview-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 卡片库 -->
+    <section class="page" id="page-1">
+      <div class="page-header">
+        <span class="pico">🗂</span>
+        <div><h1>卡片库</h1><div class="pdesc">搜索、按标签筛选、行内编辑，点卡片右上角 ✕ 删除</div></div>
+        <span class="badge" id="lib-badge"></span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px">
+        <div class="search-bar"><span>🔍</span><input id="search-input" placeholder="搜索题干 / 答案 / 标签…"></div>
+        <div class="tag-filter-row">
+          <span class="tf-cap">标签</span>
+          <div class="tag-scroll" id="tag-scroll"></div>
+        </div>
+        <div id="lib-body"></div>
+      </div>
+    </section>
+
+    <!-- 复习 -->
+    <section class="page narrow" id="page-2">
+      <div class="page-header">
+        <span class="pico">🔄</span>
+        <div><h1>复习</h1><div class="pdesc">点击卡片翻转；标记掌握度后自动跳到下一张</div></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px">
+        <div class="review-tools" id="review-tools"></div>
+        <div id="review-body" style="display:flex; flex-direction:column; gap:16px"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+<script>
+  // ===================== 数据 =====================
+  var KEY = 'memorycards_studio_v2';
+  var cards = [];            // {id, question, answer, tags:[], mastery:0/1/2}
+  var nextId = 1;
+  var navIndex = 0;
+  // 录入台
+  var draft = [];
+  var draftSkip = 0;
+  // 卡片库
+  var searchKw = '';
+  var activeTag = '';
+  var editingId = -1;
+  var editQ = '', editA = '', editTags = '';
+  // 复习
+  var reviewFilter = 'all';
+  var shuffled = false;
+  var shuffleOrder = [];
+  var curIndex = 0;
+
+  // ===================== 持久化 =====================
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(cards)); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        cards = JSON.parse(raw) || [];
+        cards.forEach(function (c) { nextId = Math.max(nextId, c.id + 1); });
+        if (cards.length) return;
+      }
+    } catch (e) {}
+    cards = buildSeedCards();
+    save();
+  }
+  function buildSeedCards() {
+    var t = function (q, a, tags, m) { return { id: nextId++, question: q, answer: a, tags: tags, mastery: m }; };
+    return [
+      t('牛顿第一定律说了什么？', '一切物体总保持静止状态或匀速直线运动状态，直到有外力迫使它改变这种状态为止。', ['物理', '定律'], 0),
+      t('勾股定理的内容是什么？', '直角三角形中，斜边的平方等于两条直角边的平方之和，即 a² + b² = c²。', ['数学', '公式'], 2),
+      t('水的化学式是什么？', 'H₂O，由两个氢原子和一个氧原子组成。', ['化学'], 1),
+      t('"abandon" 是什么意思？', '动词：放弃、抛弃、遗弃。例：不要轻易 abandon 你的学业。', ['英语', '词汇'], 0),
+      t('唐代被称为"诗鬼"的诗人是谁？', '李贺。其诗风奇诡冷艳，代表作有《雁门太守行》等。', ['文学', '常识'], 0)
+    ];
+  }
+
+  // ===================== 工具 =====================
+  var toastTimer = null;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tagChipsHtml(tags, front) {
+    if (!tags || !tags.length) return '';
+    var h = '';
+    tags.forEach(function (t) {
+      if (front) h += '<span>#' + esc(t) + '</span>';
+      else h += '<span class="chip">#' + esc(t) + '</span>';
+    });
+    return h;
+  }
+  function masteryText(m) { return m === 2 ? '🟢 已掌握' : (m === 1 ? '🟡 模糊' : '⚪ 陌生'); }
+
+  // ===================== 批量解析 =====================
+  function parseLine(line) {
+    var s = line.trim();
+    if (!s) return null;
+    s = s.replace(/｜/g, '|');
+    var tags = [];
+    var matches = s.match(/#[^\s#|]+/g);
+    if (matches) {
+      matches.forEach(function (mk) {
+        var name = mk.substring(1);
+        if (name && tags.indexOf(name) === -1) tags.push(name);
+      });
+    }
+    s = s.replace(/#[^\s#|]+/g, ' ').trim();
+    var parts = s.split('|');
+    var q = parts[0].trim();
+    var a = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+    if (!q || !a) return null;
+    return { id: 0, question: q, answer: a, tags: tags, mastery: 0 };
+  }
+  function refreshDraft() {
+    draft = [];
+    draftSkip = 0;
+    var lines = document.getElementById('batch-input').value.split('\n');
+    lines.forEach(function (line) {
+      var c = parseLine(line);
+      if (c) draft.push(c);
+      else if (line.trim()) draftSkip++;
+    });
+  }
+  function importDraft() {
+    if (!draft.length) { toast('没有可导入的卡片，请检查格式 📝'); return; }
+    var imported = 0, dup = 0;
+    draft.forEach(function (c) {
+      var exists = cards.some(function (x) { return x.question === c.question; });
+      if (exists) dup++;
+      else { cards.push({ id: nextId++, question: c.question, answer: c.answer, tags: c.tags, mastery: 0 }); imported++; }
+    });
+    save();
+    clearInput();
+    var msg = '成功导入 ' + imported + ' 张卡片 🎉';
+    if (dup > 0) msg += '，跳过重复 ' + dup + ' 张';
+    toast(msg);
+    render();
+  }
+  function fillSample() {
+    document.getElementById('batch-input').value =
+      '牛顿第二定律的表达式？| F = ma，加速度与合外力成正比、与质量成反比。 #物理 #公式\n' +
+      '光合作用的场所是？| 叶绿体（类囊体薄膜发生光反应，基质发生暗反应）。 #生物\n' +
+      '"call off" 是什么意思？| 取消，中止。例：The meeting was called off. #英语 #词汇\n' +
+      '这首诗缺答案 #会被跳过';
+    refreshDraft();
+    renderPreview();
+  }
+  function clearInput() {
+    document.getElementById('batch-input').value = '';
+    draft = [];
+    draftSkip = 0;
+    renderPreview();
+  }
+
+  // ===================== 卡片库 =====================
+  function allTags() {
+    var tags = [];
+    cards.forEach(function (c) { c.tags.forEach(function (t) { if (tags.indexOf(t) === -1) tags.push(t); }); });
+    return tags;
+  }
+  function filteredLibrary() {
+    var kw = searchKw.trim().toLowerCase();
+    return cards.filter(function (c) {
+      if (activeTag && c.tags.indexOf(activeTag) === -1) return false;
+      if (!kw) return true;
+      var hitTag = c.tags.some(function (t) { return t.toLowerCase().indexOf(kw) !== -1; });
+      return c.question.toLowerCase().indexOf(kw) !== -1 ||
+             c.answer.toLowerCase().indexOf(kw) !== -1 || hitTag;
+    });
+  }
+  function startEdit(id) {
+    var c = cards.find(function (x) { return x.id === id; });
+    if (!c) return;
+    editingId = id;
+    editQ = c.question; editA = c.answer; editTags = c.tags.join(' ');
+    renderLibrary();
+  }
+  function saveEdit() {
+    var c = cards.find(function (x) { return x.id === editingId; });
+    if (!c) { editingId = -1; return; }
+    var q = editQ.trim(), a = editA.trim();
+    if (!q || !a) { toast('题目和答案不能为空 ✍️'); return; }
+    var tags = [];
+    editTags.split(/[\s,，]+/).forEach(function (raw) {
+      var t = raw.trim();
+      if (t.startsWith('#')) t = t.substring(1);
+      if (t && tags.indexOf(t) === -1) tags.push(t);
+    });
+    c.question = q; c.answer = a; c.tags = tags;
+    editingId = -1;
+    save();
+    toast('卡片已更新 ✅');
+    render();
+  }
+
+  // ===================== 复习 =====================
+  function reviewList() {
+    var list = cards.filter(function (c) {
+      if (reviewFilter === 'todo') return c.mastery < 2;
+      if (reviewFilter === 'done') return c.mastery === 2;
+      return true;
+    });
+    if (shuffled && shuffleOrder.length) {
+      list.sort(function (a, b) {
+        var pa = shuffleOrder.indexOf(a.id), pb = shuffleOrder.indexOf(b.id);
+        if (pa === -1) pa = 999999; if (pb === -1) pb = 999999;
+        return pa - pb;
+      });
+    }
+    return list;
+  }
+  function curPos(len) {
+    if (!len) return 0;
+    var i = curIndex % len;
+    if (i < 0) i += len;
+    return i;
+  }
+  function toggleShuffle() {
+    shuffled = !shuffled;
+    if (shuffled) {
+      shuffleOrder = cards.map(function (c) { return c.id; });
+      for (var i = shuffleOrder.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = shuffleOrder[i]; shuffleOrder[i] = shuffleOrder[j]; shuffleOrder[j] = tmp;
+      }
+      toast('已开启乱序模式 🔀');
+    } else {
+      shuffleOrder = [];
+    }
+    renderReview();
+  }
+  function flipCard() {
+    var el = document.getElementById('flip-card');
+    if (el) el.classList.toggle('flipped');
+  }
+  function changeCard(step) {
+    curIndex += step;
+    renderReview();
+  }
+  function mark(m) {
+    var list = reviewList();
+    if (!list.length) return;
+    var card = list[curPos(list.length)];
+    var target = cards.find(function (x) { return x.id === card.id; });
+    if (target) target.mastery = m;
+    save();
+    curIndex++;
+    render();
+    toast(['已标记：陌生 💪', '已标记：模糊 🤔', '太棒了，已掌握！🎉'][m]);
+  }
+
+  // ===================== 渲染 =====================
+  function render() {
+    renderStats();
+    renderStudioBadge();
+    renderPreview();
+    renderLibrary();
+    renderReview();
+  }
+
+  function renderStats() {
+    var done = cards.filter(function (c) { return c.mastery === 2; }).length;
+    document.getElementById('st-total').textContent = cards.length + ' 张';
+    document.getElementById('st-tags').textContent = allTags().length + ' 个';
+    document.getElementById('st-done').textContent = done + ' 张';
+  }
+  function renderStudioBadge() {
+    document.getElementById('studio-badge').textContent = cards.length + ' 张卡片';
+  }
+
+  function renderPreview() {
+    document.getElementById('draft-count').textContent = draft.length + ' 张';
+    var skipEl = document.getElementById('draft-skip');
+    skipEl.style.display = draftSkip > 0 ? '' : 'none';
+    skipEl.textContent = draftSkip + ' 行将被跳过';
+    var body = document.getElementById('preview-body');
+    if (!draft.length) {
+      body.innerHTML = '<div class="panel preview-empty"><div class="big">🪄</div>' +
+        '<div class="txt">在左侧输入内容后<br>这里会实时渲染卡片预览</div></div>';
+      return;
+    }
+    var h = '<div class="preview-list">';
+    draft.forEach(function (c, i) {
+      h += '<div class="p-card"><div class="pr"><span>第 ' + (i + 1) + ' 张</span><span class="ok">✓ 可导入</span></div>' +
+        '<div class="pq">' + esc(c.question) + '</div>' +
+        '<div class="pa">' + esc(c.answer) + '</div>' +
+        '<div class="tags">' + tagChipsHtml(c.tags) + '</div></div>';
+    });
+    body.innerHTML = h + '</div>';
+  }
+
+  function renderLibrary() {
+    document.getElementById('lib-badge').textContent = cards.length + ' 张';
+    // 标签筛选
+    var ts = document.getElementById('tag-scroll');
+    var th = '<span class="chip click ' + (activeTag === '' ? 'on' : '') + '" onclick="clickTag(\'\')">全部</span>';
+    allTags().forEach(function (t) {
+      th += '<span class="chip click ' + (activeTag === t ? 'on' : '') + '" onclick="clickTag(\'' + esc(t) + '\')">#' + esc(t) + '</span>';
+    });
+    ts.innerHTML = th;
+    // 列表
+    var body = document.getElementById('lib-body');
+    var list = filteredLibrary();
+    if (!list.length) {
+      body.innerHTML = '<div class="panel empty-state"><div class="big">📭</div>' +
+        '<div class="t1">没有找到匹配的卡片</div><div class="t2">换个关键词或标签试试～</div></div>';
+      return;
+    }
+    var h = '<div class="lib-list">';
+    list.forEach(function (c) {
+      if (c.id === editingId) {
+        h += '<div class="lib-item edit-box"><div class="eb-cap">✏️ 编辑卡片 #' + c.id + '</div>' +
+          '<input id="ed-q" value="' + esc(editQ) + '" oninput="editQ=this.value" placeholder="题目">' +
+          '<div class="sep"></div>' +
+          '<textarea id="ed-a" oninput="editA=this.value" placeholder="答案">' + esc(editA) + '</textarea>' +
+          '<div class="sep"></div>' +
+          '<input id="ed-t" value="' + esc(editTags) + '" oninput="editTags=this.value" placeholder="标签（空格/逗号分隔，可带 #）">' +
+          '<div class="edit-actions"><button class="cancel" onclick="cancelEdit()">取消</button>' +
+          '<button class="save" onclick="saveEdit()">保存修改</button></div></div>';
+      } else {
+        h += '<div class="lib-item"><div class="row1"><div class="q">' + esc(c.question) + '</div>' +
+          '<button class="del" onclick="removeCard(' + c.id + ')">✕</button></div>' +
+          '<div class="a">' + esc(c.answer) + '</div>' +
+          '<div class="row3"><div class="tags">' + tagChipsHtml(c.tags) + '</div>' +
+          '<span class="m-badge">' + masteryText(c.mastery) + '</span>' +
+          '<button class="edit-btn" onclick="startEdit(' + c.id + ')">编辑</button></div></div>';
+      }
+    });
+    body.innerHTML = h + '</div>';
+  }
+  function clickTag(t) { activeTag = (activeTag === t ? '' : t); renderLibrary(); }
+  function cancelEdit() { editingId = -1; renderLibrary(); }
+  function removeCard(id) {
+    var i = cards.findIndex(function (c) { return c.id === id; });
+    if (i >= 0) { cards.splice(i, 1); save(); toast('已删除卡片 🗑'); render(); }
+  }
+
+  function renderReview() {
+    // 工具行
+    var tools = document.getElementById('review-tools');
+    var chips = [['全部', 'all'], ['待巩固', 'todo'], ['已掌握', 'done']];
+    var th = '';
+    chips.forEach(function (p) {
+      th += '<span class="chip click ' + (reviewFilter === p[1] ? 'on' : '') + '" onclick="setFilter(\'' + p[1] + '\')">' + p[0] + '</span>';
+    });
+    th += '<span class="chip click shuffle ' + (shuffled ? 'on' : '') + '" onclick="toggleShuffle()">' +
+          (shuffled ? '🔀 乱序中' : '🔀 洗牌') + '</span>';
+    tools.innerHTML = th;
+
+    var body = document.getElementById('review-body');
+    var list = reviewList();
+    if (!list.length) {
+      var msg = reviewFilter === 'done' ? '还没有已掌握的卡片' : '没有待复习的卡片';
+      body.innerHTML = '<div class="panel empty-state"><div class="big">🎉</div><div class="t1">' + msg +
+        '</div><div class="t2">去「录入台」添加新卡片吧～</div>' +
+        '<button onclick="switchNav(0)">去录入</button></div>';
+      return;
+    }
+    var c = list[curPos(list.length)];
+    body.innerHTML =
+      '<div class="progress-pill">第 ' + (curPos(list.length) + 1) + ' / ' + list.length + ' 张</div>' +
+      '<div class="flip-scene"><div class="flip-card" id="flip-card" onclick="flipCard()">' +
+        '<div class="flip-face face-front">' +
+          '<div class="face-tag">💡 题目</div>' +
+          '<div class="face-main">' + esc(c.question) + '</div>' +
+          (c.tags.length ? '<div class="ftags">' + tagChipsHtml(c.tags, true) + '</div>' : '') +
+          '<div class="face-hint">点击卡片揭晓答案 👆</div>' +
+        '</div>' +
+        '<div class="flip-face face-back">' +
+          '<div class="face-tag">📌 答案</div>' +
+          '<div class="face-main">' + esc(c.answer) + '</div>' +
+          '<div class="face-hint">这张卡片掌握得怎么样？👇</div>' +
+        '</div>' +
+      '</div></div>' +
+      '<div class="mark-cap">标记这张卡片的掌握程度</div>' +
+      '<div class="mark-row">' +
+        '<button class="mark-0" onclick="mark(0)">😅 陌生</button>' +
+        '<button class="mark-1" onclick="mark(1)">🤔 模糊</button>' +
+        '<button class="mark-2" onclick="mark(2)">😄 已掌握</button>' +
+      '</div>' +
+      '<div class="nav-row">' +
+        '<button class="nav-prev" onclick="changeCard(-1)">← 上一张</button>' +
+        '<button class="nav-next" onclick="changeCard(1)">下一张 →</button>' +
+      '</div>';
+  }
+  function setFilter(f) { reviewFilter = f; curIndex = 0; renderReview(); }
+
+  // ===================== 导航 =====================
+  function switchNav(i) {
+    navIndex = i;
+    document.querySelectorAll('.nav-item').forEach(function (n, idx) {
+      n.classList.toggle('active', idx === i);
+    });
+    document.querySelectorAll('.page').forEach(function (p, idx) {
+      p.classList.toggle('active', idx === i);
+    });
+    document.querySelector('.content').scrollTop = 0;
+  }
+  document.querySelectorAll('.nav-item').forEach(function (n) {
+    n.addEventListener('click', function () { switchNav(+this.dataset.nav); });
+  });
+
+  document.getElementById('batch-input').addEventListener('input', function () {
+    refreshDraft();
+    renderPreview();
+  });
+  document.getElementById('search-input').addEventListener('input', function () {
+    searchKw = this.value;
+    renderLibrary();
+  });
+  // Ctrl+Enter 快捷导入
+  document.getElementById('batch-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) importDraft();
+  });
+
+  // ===================== 启动 =====================
+  load();
+  render();
+</script>
+</body>
+</html>

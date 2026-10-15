@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "记忆卡片制作台"
+    },
+    {
+      "name": "ability_desc",
+      "value": "学习记忆卡片 Demo 主 Ability"
+    },
+    {
+      "name": "module_desc",
+      "value": "学习记忆卡片 Demo"
+    }
+  ]
+}

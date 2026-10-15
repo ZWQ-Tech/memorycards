@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习记忆卡片 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #FAF6EE;
+    --primary: #3FA372;
+    --sub: #8A8A8A;
+    --input-bg: #F5F0E4;
+    --front: #3D7A63;
+    --back: #FFF3B8;
+    --back-text: #5A4A1E;
+  }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "HarmonyOS Sans", sans-serif;
+    background: var(--bg);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .page-wrap { flex: 1; overflow-y: auto; display: none; }
+  .page-wrap.active { display: block; }
+  .container { max-width: 560px; margin: 0 auto; padding: 32px 20px 24px; }
+  .title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .title-row .emoji { font-size: 26px; }
+  .title-row h1 { font-size: 24px; color: #333; }
+  .subtitle { font-size: 14px; color: var(--sub); margin-bottom: 20px; }
+  .card-box {
+    background: #fff; border-radius: 18px; padding: 18px;
+    box-shadow: 0 4px 12px rgba(63,163,114,.10);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  label { font-size: 15px; font-weight: 500; color: #333; }
+  input, textarea {
+    width: 100%; border: none; outline: none; background: var(--input-bg);
+    border-radius: 12px; padding: 13px 14px; font-size: 15px; color: #333;
+    font-family: inherit; resize: none;
+  }
+  input::placeholder, textarea::placeholder { color: #B7AE9E; }
+  input { height: 46px; }
+  textarea { height: 110px; }
+  .btn-primary {
+    width: 100%; height: 46px; border: none; border-radius: 23px;
+    background: var(--primary); color: #fff; font-size: 16px; font-weight: 500;
+    cursor: pointer; transition: transform .12s, filter .12s;
+  }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-primary:active { transform: scale(.98); }
+  .count-hint { text-align: center; font-size: 13px; color: var(--sub); margin-top: 14px; }
+
+  /* 卡片库 */
+  .lib-count { font-size: 14px; color: var(--sub); margin-bottom: 16px; }
+  .lib-list { display: flex; flex-direction: column; gap: 12px; }
+  .lib-item {
+    background: #fff; border-radius: 16px; padding: 14px 16px;
+    box-shadow: 0 3px 10px rgba(63,163,114,.08);
+  }
+  .lib-item .row { display: flex; align-items: flex-start; gap: 10px; }
+  .lib-item .q {
+    flex: 1; font-size: 16px; font-weight: 700; color: #333;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .lib-item .del {
+    border: none; background: none; color: #B9B9B9; font-size: 16px;
+    cursor: pointer; padding: 2px 4px 2px 10px; line-height: 1;
+  }
+  .lib-item .del:hover { color: #e05555; }
+  .lib-item .a {
+    font-size: 14px; color: var(--sub); margin-top: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .empty {
+    text-align: center; padding: 60px 0;
+  }
+  .empty .big { font-size: 56px; }
+  .empty .t1 { font-size: 16px; color: #666; font-weight: 500; margin-top: 10px; }
+  .empty .t2 { font-size: 13px; color: var(--sub); margin-top: 4px; }
+  .empty button {
+    margin-top: 14px; border: none; border-radius: 20px; height: 40px;
+    padding: 0 24px; background: var(--primary); color: #fff; font-size: 15px; cursor: pointer;
+  }
+
+  /* 复习页 */
+  .review-wrap { text-align: center; }
+  .progress-pill {
+    display: inline-block; font-size: 13px; color: #6B5B3E; background: #F0EAD9;
+    padding: 6px 14px; border-radius: 14px; margin-bottom: 18px;
+  }
+  .flip-scene { perspective: 900px; margin-bottom: 10px; }
+  .flip-card {
+    position: relative; height: 300px; cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform .44s cubic-bezier(.45,.05,.35,1);
+  }
+  .flip-card.flipped { transform: rotateY(180deg); }
+  .flip-face {
+    position: absolute; inset: 0; border-radius: 22px;
+    display: flex; flex-direction: column; justify-content: center;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    padding: 0 24px;
+  }
+  .face-front { background: var(--front); box-shadow: 0 6px 16px rgba(61,122,99,.25); }
+  .face-back {
+    background: var(--back); box-shadow: 0 6px 16px rgba(194,169,63,.25);
+    transform: rotateY(180deg);
+  }
+  .face-tag { font-size: 14px; margin-bottom: 14px; }
+  .face-front .face-tag { color: #CDE8DC; }
+  .face-back .face-tag { color: #B08900; }
+  .face-main { font-size: 22px; line-height: 1.6; word-break: break-word; }
+  .face-front .face-main { color: #fff; font-weight: 700; }
+  .face-back .face-main { color: var(--back-text); font-weight: 500; font-size: 17px; }
+  .face-hint { font-size: 12px; margin-top: 14px; }
+  .face-front .face-hint { color: #9DBFB0; }
+  .face-back .face-hint { color: #C4A93F; }
+  .flip-tip { font-size: 12px; color: var(--sub); margin-bottom: 18px; }
+  .nav-row { display: flex; justify-content: center; gap: 20px; }
+  .nav-btn {
+    height: 44px; padding: 0 22px; border-radius: 22px; font-size: 15px; cursor: pointer;
+    transition: transform .12s;
+  }
+  .nav-btn:active { transform: scale(.96); }
+  .nav-prev { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+  .nav-next { background: var(--primary); color: #fff; border: none; }
+
+  /* 底部标签栏 */
+  .tabbar {
+    display: flex; background: #fff; height: 60px; border-top: 1px solid #F0EBDF;
+    box-shadow: 0 -2px 10px rgba(0,0,0,.03); flex-shrink: 0;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; cursor: pointer; border: none; background: none;
+    color: #9A9A9A; font-size: 13px; font-family: inherit;
+  }
+  .tab-item .ico { font-size: 22px; line-height: 1; }
+  .tab-item.active { color: var(--primary); font-weight: 700; }
+
+  /* Toast */
+  #toast {
+    position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
+    background: rgba(51,51,51,.88); color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s; white-space: nowrap;
+    z-index: 99;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+  <!-- 页面一：录入 -->
+  <div class="page-wrap active" id="page-add">
+    <div class="container">
+      <div class="title-row"><span class="emoji">✏️</span><h1>录入卡片</h1></div>
+      <div class="subtitle">记下知识点，打造你的专属记忆卡库！</div>
+      <div class="card-box">
+        <label>题目</label>
+        <input id="in-q" placeholder="例如：牛顿第一定律说了什么？" maxlength="100">
+        <label>答案</label>
+        <textarea id="in-a" placeholder="在这里写下答案～（支持多行）" maxlength="500"></textarea>
+        <button class="btn-primary" onclick="addCard()">＋ 加入卡片库</button>
+      </div>
+      <div class="count-hint" id="add-count"></div>
+    </div>
+  </div>
+
+  <!-- 页面二：卡片库 -->
+  <div class="page-wrap" id="page-lib">
+    <div class="container">
+      <div class="title-row"><span class="emoji">🗂</span><h1>卡片库</h1></div>
+      <div class="lib-count" id="lib-count"></div>
+      <div id="lib-body"></div>
+    </div>
+  </div>
+
+  <!-- 页面三：复习 -->
+  <div class="page-wrap" id="page-review">
+    <div class="container review-wrap">
+      <div class="title-row" style="justify-content:center"><span class="emoji">🔄</span><h1>复习</h1></div>
+      <div id="review-body" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- 底部标签栏 -->
+  <div class="tabbar">
+    <button class="tab-item active" data-tab="0"><span class="ico">✏️</span>录入</button>
+    <button class="tab-item" data-tab="1"><span class="ico">🗂</span>卡片库</button>
+    <button class="tab-item" data-tab="2"><span class="ico">🔄</span>复习</button>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+  // ===================== 数据 =====================
+  var KEY = 'memorycards_demo';
+  var cards = [];          // {id, question, answer}
+  var nextId = 1;
+  var curIndex = 0;
+
+  // ===================== 持久化 =====================
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(cards)); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        cards = JSON.parse(raw) || [];
+        cards.forEach(function (c) { nextId = Math.max(nextId, c.id + 1); });
+        return;
+      }
+    } catch (e) {}
+    // 首次启动：预置示例卡片
+    cards = [
+      { id: nextId++, question: '牛顿第一定律说了什么？', answer: '一切物体总保持静止状态或匀速直线运动状态，直到有外力迫使它改变这种状态为止。' },
+      { id: nextId++, question: '勾股定理的内容是什么？', answer: '直角三角形中，斜边的平方等于两条直角边的平方之和，即 a² + b² = c²。' },
+      { id: nextId++, question: 'abandon 是什么意思？', answer: '动词：放弃、抛弃、遗弃。例句：不要轻易 abandon 学业。' }
+    ];
+    save();
+  }
+
+  // ===================== 工具 =====================
+  var toastTimer = null;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ===================== 录入 =====================
+  function addCard() {
+    var q = document.getElementById('in-q').value.trim();
+    var a = document.getElementById('in-a').value.trim();
+    if (!q || !a) { toast('题目和答案都要填写哦～ ✍️'); return; }
+    cards.push({ id: nextId++, question: q, answer: a });
+    save();
+    document.getElementById('in-q').value = '';
+    document.getElementById('in-a').value = '';
+    toast('添加成功！库里共有 ' + cards.length + ' 张卡 🎉');
+    render();
+  }
+
+  // ===================== 卡片库 =====================
+  function removeCard(index) {
+    cards.splice(index, 1);
+    if (curIndex >= cards.length) curIndex = Math.max(0, cards.length - 1);
+    save();
+    toast('已删除卡片 🗑');
+    render();
+  }
+
+  // ===================== 复习 =====================
+  function flipCard() {
+    if (!cards.length) return;
+    document.getElementById('flip-card').classList.toggle('flipped');
+  }
+  function changeCard(step) {
+    if (!cards.length) return;
+    curIndex = (curIndex + step + cards.length) % cards.length;
+    renderReview();
+  }
+
+  // ===================== 渲染 =====================
+  function render() {
+    // 录入页计数
+    document.getElementById('add-count').textContent =
+      cards.length ? '📖 库里已有 ' + cards.length + ' 张卡，去复习吧！' : '';
+
+    // 卡片库
+    document.getElementById('lib-count').textContent = '共 ' + cards.length + ' 张卡片';
+    var body = document.getElementById('lib-body');
+    if (!cards.length) {
+      body.innerHTML = '<div class="empty"><div class="big">📭</div>' +
+        '<div class="t1">卡库还是空的</div>' +
+        '<div class="t2">去「录入」页创建第一张卡片吧～</div>' +
+        '<button onclick="switchTab(0)">去录入</button></div>';
+    } else {
+      var html = '<div class="lib-list">';
+      cards.forEach(function (c, i) {
+        html += '<div class="lib-item"><div class="row">' +
+          '<div class="q">' + esc(c.question) + '</div>' +
+          '<button class="del" onclick="removeCard(' + i + ')">✕</button></div>' +
+          '<div class="a">' + esc(c.answer) + '</div></div>';
+      });
+      body.innerHTML = html + '</div>';
+    }
+    renderReview();
+  }
+
+  function renderReview() {
+    var body = document.getElementById('review-body');
+    if (!cards.length) {
+      body.innerHTML = '<div class="empty"><div class="big">🗂</div>' +
+        '<div class="t1">还没有卡片可以复习</div>' +
+        '<div class="t2">先去添加几张卡片吧～</div>' +
+        '<button onclick="switchTab(0)">去录入</button></div>';
+      return;
+    }
+    var c = cards[Math.min(curIndex, cards.length - 1)];
+    var flipped = document.getElementById('flip-card') &&
+                  document.getElementById('flip-card').classList.contains('flipped');
+    body.innerHTML =
+      '<div class="progress-pill">第 ' + (curIndex + 1) + ' / ' + cards.length + ' 张</div>' +
+      '<div class="flip-scene"><div class="flip-card' + (flipped ? ' flipped' : '') + '" id="flip-card" onclick="flipCard()">' +
+        '<div class="flip-face face-front">' +
+          '<div class="face-tag">💡 题目</div>' +
+          '<div class="face-main">' + esc(c.question) + '</div>' +
+          '<div class="face-hint">点击卡片揭晓答案 👆</div>' +
+        '</div>' +
+        '<div class="flip-face face-back">' +
+          '<div class="face-tag">📌 答案</div>' +
+          '<div class="face-main">' + esc(c.answer) + '</div>' +
+          '<div class="face-hint">点击卡片回到题目 👆</div>' +
+        '</div>' +
+      '</div></div>' +
+      '<div class="flip-tip" id="flip-tip">' + (flipped ? '点击卡片回到题目 💡' : '点击卡片看答案 👀') + '</div>' +
+      '<div class="nav-row">' +
+        '<button class="nav-btn nav-prev" onclick="changeCard(-1)">← 上一张</button>' +
+        '<button class="nav-btn nav-next" onclick="changeCard(1)">下一张 →</button>' +
+      '</div>';
+
+    // 翻转后同步提示文字
+    var card = document.getElementById('flip-card');
+    card.addEventListener('transitionend', function () {
+      var tip = document.getElementById('flip-tip');
+      if (tip) tip.textContent = card.classList.contains('flipped') ? '点击卡片回到题目 💡' : '点击卡片看答案 👀';
+    });
+  }
+
+  // ===================== 标签页 =====================
+  function switchTab(index) {
+    document.querySelectorAll('.page-wrap').forEach(function (p, i) {
+      p.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.tab-item').forEach(function (t, i) {
+      t.classList.toggle('active', i === index);
+    });
+    var wrap = document.querySelector('.page-wrap.active');
+    if (wrap) wrap.scrollTop = 0;
+  }
+  document.querySelectorAll('.tab-item').forEach(function (t) {
+    t.addEventListener('click', function () { switchTab(+this.dataset.tab); });
+  });
+  // 回车快捷添加
+  document.getElementById('in-a').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addCard();
+  });
+
+  // ===================== 启动 =====================
+  load();
+  render();
+</script>
+</body>
+</html>

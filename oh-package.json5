@@ -1,0 +1,10 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "memorycards",
+  "version": "1.0.0",
+  "description": "ArkTS 学习记忆卡片 Demo（HarmonyOS PC 端）",
+  "main": "",
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}
