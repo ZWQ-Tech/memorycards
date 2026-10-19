@@ -5,6 +5,14 @@
 
 > 已按课程要求配置：Compatible SDK **6.1.1(24)**，设备类型 **2in1**（鸿蒙 PC），可直接用 2in1 模拟器运行。
 
+## 🔗 在线预览（免安装，浏览器直接打开）
+
+- **Demo 入口页**：https://zwq-tech.github.io/memorycards/
+- **制作台完整版**：https://zwq-tech.github.io/memorycards/demo/memorycards-studio-demo.html
+- **轻量演示版**：https://zwq-tech.github.io/memorycards/demo/memorycards-demo.html
+
+> 由 GitHub Pages 托管，`main` 分支根目录即站点根目录；网页版与 ArkTS 工程为同一套交互逻辑的两种实现。
+
 ## 功能一览
 
 ### 📝 录入台（左录入 / 右预览 双栏布局）
@@ -62,9 +70,11 @@
 
 > 也可以先用右上角 **Previewer（预览器）** 快速查看界面，无需启动模拟器。
 
-## 提交到自己的 GitHub
+## 提交到自己的 GitHub（已完成）
 
-本文件夹已初始化 Git 仓库并完成首次提交（含 HarmonyOS 工程 `.gitignore`），你只需：
+仓库地址：**https://github.com/ZWQ-Tech/memorycards**
+
+本文件夹已初始化 Git 仓库并完成首次提交（含 HarmonyOS 工程 `.gitignore`），后续如需重新推送到别的仓库：
 
 1. 登录 [github.com](https://github.com) → 右上角 **+** → **New repository**
    - 仓库名如 `memorycards`，选 Public，**不要**勾选 "Add a README"（避免冲突）
