@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆卡片制作台 · Demo 入口</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --sidebar: #2E5C4D;
+    --bg: #F7F4EC;
+    --primary: #3FA372;
+    --sub: #8A8A8A;
+    --front: #3D7A63;
+    --back: #FFF3B8;
+    --back-text: #5A4A1E;
+    --tag-bg: #E3F2E8;
+    --tag-fg: #2E7D5B;
+  }
+  body {
+    min-height: 100vh;
+    font-family: "PingFang SC", "Microsoft YaHei", "HarmonyOS Sans", sans-serif;
+    background: var(--bg);
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .wrap { width: 100%; max-width: 860px; }
+
+  header { text-align: center; margin-bottom: 36px; }
+  .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    font-size: 13px;
+    letter-spacing: .5px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 34px;
+    color: var(--sidebar);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .sub { color: var(--sub); font-size: 15px; line-height: 1.7; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  a.card {
+    display: block;
+    text-decoration: none;
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px 26px;
+    border: 1px solid rgba(46, 92, 77, .10);
+    box-shadow: 0 6px 22px rgba(46, 92, 77, .08);
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  }
+  a.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px rgba(46, 92, 77, .16);
+    border-color: rgba(63, 163, 114, .45);
+  }
+  .icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: var(--tag-bg);
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 18px; color: var(--front); margin-bottom: 8px; }
+  .card p { font-size: 13.5px; color: var(--sub); line-height: 1.65; }
+  .go {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 16px;
+    font-size: 13.5px;
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .go::after { content: "→"; transition: transform .22s ease; }
+  a.card:hover .go::after { transform: translateX(4px); }
+
+  footer {
+    margin-top: 34px;
+    text-align: center;
+    font-size: 12.5px;
+    color: #A8A8A8;
+    line-height: 1.9;
+  }
+  footer a { color: var(--tag-fg); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="badge">HarmonyOS PC (2in1) · 网页 Demo</span>
+      <h1>学习记忆卡片制作台</h1>
+      <p class="sub">录入 · 卡片库 · 复习，左侧深绿导航 + 右侧分模块内容区<br>无需安装，点开即用</p>
+    </header>
+
+    <div class="cards">
+      <a class="card" href="demo/memorycards-studio-demo.html">
+        <div class="icon">🗂️</div>
+        <h2>制作台完整版</h2>
+        <p>录入台实时预览、卡片库搜索筛选、3D 翻卡复习与掌握度标记，功能最完整的一版。</p>
+        <span class="go">打开 Demo</span>
+      </a>
+
+      <a class="card" href="demo/memorycards-demo.html">
+        <div class="icon">✨</div>
+        <h2>轻量演示版</h2>
+        <p>单文件精简演示，聚焦核心交互流程，适合快速浏览整体效果。</p>
+        <span class="go">打开 Demo</span>
+      </a>
+    </div>
+
+    <footer>
+      源码：ArkTS 工程（DevEco Studio 6.1.1，设备类型 2in1）见
+      <a href="https://github.com/ZWQ-Tech/memorycards">GitHub 仓库</a><br>
+      核心代码位于 entry/src/main/ets/pages/Index.ets
+    </footer>
+  </div>
+</body>
+</html>
